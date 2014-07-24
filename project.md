@@ -87,10 +87,75 @@ HTTP con una sintassi "human-friendly": per questa ragione ogni volta che
 verrà utilizzato HTTPie sarà subito chiaro cosa si sta facendo.
 
 
-[json]: http://json.org/
-[programmers-stackexchange]: http://programmers.stackexchange.com
+## Richieste HTTP
+
+Una richiesta HTTP è formata da un'intestazione e un corpo opzionale.
+
+L'intestazione è formata da:
+
+- una riga di richiesta formata in ordine da metodo di richiesta, path sul
+    server e versione di HTTP, separati da un singolo spazio
+- zero o più *headers* nella forma `HEADER-NAME: value`
+- una riga vuota
+- un "corpo" opzionale contenente una quantità arbitraria di dati
+
+La riga di richiesta e le righe contenenti gli headers (un header per riga)
+devono terminare con un carattere di *carriage return* seguito da un carattere
+di *line feed*. La riga vuota deve contenere solo un carattere di *carriage
+return* seguito da uno di *line feed*.
+
+È importante notare che in HTTP/1.1 (rispetto ad HTTP/1.0) diventa obbligatorio
+l'header `Host`.
+
+Vediamo un esempio di richiesta HTTP *well-formed* che un form su un sito web
+potrebbe inviare all'indirizzo `http://flickr.com/images`:
+
+``` http
+POST /images HTTP/1.1
+Host: flickr.com
+User-Agent: Mozilla Firefox
+
+image_name=foo
+```
+
+È chiara la funzionalità della versione di HTTP. Il body non fa altro che
+trasferire dati al server. Vediamo più a fondo metodo di richiesta e headers.
+
+### Headers
+
+Gli header vengono utilizzati per comunicare metainformazioni (informazioni che
+non riguardano il payload di dati) dal client al server.  
+L'unico header obbligatorio (e solo in HTTP/1.1) è l'header `Host`, che permette
+allo stesso server HTTP di servire diversi contenuti in base al dominio nello
+header `Host`. Altri header degni di nota sono:
+
+- `User-Agent`: comunica al server con che client (che browser ad esempio) si
+    sta effettuando la richiesta.
+- `Content-Length`: lunghezza del contenuto (in byte).
+- `Accept`: il tipo di contenuto (*Content Type*) che il client vorrebbe
+    ottenere in risposta alla richiesta.
+- `Accept-Charset`: il set di caratteri (ad esempio UTF-8) che il client è
+    in grado di a ricevere.
+
+Molti altri header sono standardizzati nella RFC 2616 (nella [sezione
+14][rfc-http-headers]).
+
+Da notare che HTTP non impone un limite al numero di header utilizzabili (anche
+se molti web server impongono un limite effettivo alla grandezza
+dell'intestazione, ad esempio Apache che [limita la grandezza a
+8kb][apache-headers-limit]) né impone regolazioni su *quali* debbano essere gli
+header. L'unica restrizione che HTTP impone è che gli headers definiti in RFC
+2616 siano conformi alla RFC stessa.  
+È comune la convenzione di prefissare gli header custom con una `X`, ad esempio
+`X-Twitter-Username`.
+
+
+
+
+
 [rfc-http-1.0]: http://www.isi.edu/in-notes/rfc1945.txt
 [rfc-http-1.1]: http://www.ietf.org/rfc/rfc2616.txt
+[rfc-http-headers]: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
 [wget]: https://www.gnu.org/software/wget/
 [curl]: http://curl.haxx.se/
 [httpie]: https://github.com/jakubroztocil/httpie
@@ -101,5 +166,6 @@ verrà utilizzato HTTPie sarà subito chiaro cosa si sta facendo.
 [thin]: http://code.macournoyer.com/thin/
 [puma]: http://puma.io/
 [sinatra]: http://www.sinatrarb.com/
+[apache-headers-limit]: http://httpd.apache.org/docs/2.2/mod/core.html#limitrequestfieldsize
 [stackexchange-problems-custom-methods]: http://programmers.stackexchange.com/questions/193821/are-there-any-problems-with-implementing-custom-http-methods
 [http-1.0-isnt-dead]: http://erlang.2086793.n4.nabble.com/Any-HTTP-1-0-clients-out-there-td2116037.html
