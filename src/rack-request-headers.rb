@@ -1,6 +1,6 @@
 require 'rack'
 
-Rack::Handler::WEBrick.run proc do |env|
+app = proc do |env|
   # La variabile `env` è un dizionario che contiene headers CGI e di conseguenza
   # gli header della richiesta HTTP sono individuati da chiavi prefissate con
   # `HTTP_`. Questo handler processa una richiesta HTTP stampando tutti gli
@@ -15,3 +15,5 @@ Rack::Handler::WEBrick.run proc do |env|
 
   [200, { 'Content-Type' => 'text/plain' }, headers]
 end
+
+Rack::Handler::WEBrick.run app
