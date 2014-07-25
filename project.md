@@ -324,6 +324,89 @@ ufficiale di HTTP/1.1) ma molti web framework (come ad esempio [Ruby on
 Rails][rails]) già supportano il metodo PATCH da diversi anni.
 
 
+#### Customizzazione dei metodi di richiesta
+
+I metodi di richiesta HTTP non sono pochi e coprono bene la maggior parte di
+quelle che sono le funzionalità di cui si ha bisogno.
+
+Tuttavia, con la nascita e crescita delle [API web][web-api] e di servizi web
+sempre più complessi che sfruttano richieste e risposte HTTP per manipolare
+dati, alcuni si sono chiesti se fosse possibile implementare dei metodi di
+richiesta HTTP **custom**.
+
+Vediamo un breve use case pratico: supponiamo di avere un sito web che rende
+disponibili una serie di documenti importanti (come RFC ad esempio). Un'azione
+che la API di questo sito vuole mettere a disposizione degli utenti è
+la funzionalità di cancellare un documento sul sito. Essendo i documenti di
+estrema importanza, ci si vuole assicurare che essi non vengano distrutti con
+leggerezza. Per fare questo si implementa il metodo DELETE (su una risorsa documento
+identificata ad esempio dall'URI `/documents/1`, dove `1` è l'id del documento)
+in modo da non distruggere i documenti, ma solo da "nasconderli" e archiviarli.  
+Per mettere a disposizione un metodo che distrugga effettivamente un documento
+si potrebbe pensare di utilizzare un metodo custom: DELETEFOREVER.  
+In questo modo si potrebbero effettuare richieste del tipo:
+
+    DELETEFOREVER /documents/1 HTTP/1.1
+
+
+###### Opinioni
+
+Alcuni sono in favore dell'implementazione di metodi custom; la maggior parte
+delle risorse trovate in rete, tuttavia, sono contrarie alla pratica.
+
+È interessante [questa][stackexchange-custom-methods] domanda sul sito di Q&A
+[programmers.stackexchange.com][programmers-stackexchange]. In essa l'utente che
+pone la domanda chiede se ci sono problemi nell'utilizzare metodi di richiesta
+HTTP custom: la maggior parte delle risposte sono contrarie a questa pratica.  
+Un utente commenta:
+
+> Nothing wrong, as long as you realize that you're now using a custom protocol and not HTTP.
+
+Riguardo questo aspetto, l'utente si sbaglia. Citando la RFC 2616 alla lettera:
+
+> The set of common methods for HTTP/1.1 is defined below. Although this set can
+be expanded, additional methods cannot be assumed to share the same semantics
+for separately extended clients and servers.
+
+Lo standard HTTP impone solo che i metodi standardizzati (definiti sopra) si
+comportino come specificato, ma non impone restrizioni su quali metodi rendere
+disponibili.
+
+Nonostante ciò, molte delle argomentazioni presenti nelle risposte alla domanda
+sono molto valide: il problema principale è che, essendo i metodi custom non
+standardizzati, non si hanno "regole" su come implementarli. Essi ad esempio non
+possono essere compresi/debuggati a primo impatto da sviluppatori esterni a chi
+li implementa.
+
+###### Supporto
+
+La maggior parte dei server web (Apache, Nginx) supportano metodi custom, così
+come la maggior parte dei client (ad esempio è possibile effettuare richieste
+cone metodi custom tramite Ajax in JavaScript).
+
+###### WebDAV
+
+[WebDAV][webdav] (Web Distributed Authoring and Versioning) è un set di
+estensioni ad HTTP che permette a utenti di modificare documenti online in
+collaborazione con altri utenti. WebDAV aggiunge diversi metodi di richiesta
+custom (come COPY, MOVE, MKCOL) ad HTTP.
+
+Anche WebDAV è soggetto alle stesse critiche esposte precedentemente; l'unico
+pregio in più di questo "protocollo" è che è ben documentato e standardizzato.
+
+###### Esempi pratici
+
+Con HTTPie è possibile effettuare richieste con qualsiasi metodo tramite la
+sintassi `http [REQUEST_METHOD] [URL]`. Ad esempio è possibile effettuare una
+richiesta di tipo COPY a `example.com/doc/1` nel seguente modo:
+
+    http COPY example.com/doc/1
+
+Per completezza, vediamo come è possibile effettuare richieste con metodi custom
+tramite curl:
+
+    curl -X COPY example.com/doc/1
+
 
 [rfc-http-1.0]: http://www.isi.edu/in-notes/rfc1945.txt
 [rfc-http-1.1]: http://www.ietf.org/rfc/rfc2616.txt
@@ -341,6 +424,9 @@ Rails][rails]) già supportano il metodo PATCH da diversi anni.
 [sinatra]: http://www.sinatrarb.com/
 [pip]: http://pip.readthedocs.org/en/latest/
 [rails]: http://rubyonrails.org/
+[web-api]: http://en.wikipedia.org/wiki/Web_API
+[webdav]: http://www.webdav.org/
+[programmers-stackexchange]: http://programmers.stackexchange.com/
 [apache-headers-limit]: http://httpd.apache.org/docs/2.2/mod/core.html#limitrequestfieldsize
-[stackexchange-problems-custom-methods]: http://programmers.stackexchange.com/questions/193821/are-there-any-problems-with-implementing-custom-http-methods
+[stackexchange-custom-methods]: http://programmers.stackexchange.com/questions/193821/are-there-any-problems-with-implementing-custom-http-methods
 [http-1.0-isnt-dead]: http://erlang.2086793.n4.nabble.com/Any-HTTP-1-0-clients-out-there-td2116037.html
