@@ -58,6 +58,16 @@ Durante tutto il documento la versione di HTTP di riferimento (a meno che non
 specificato diversamente) sarà HTTP/1.1.
 
 
+### Glossario dei concetti
+
+Introduciamo terminologia e concetti che saranno utili durante il corso del
+documento.
+
+- Request-URI: è un URI (Uniform Resource Identifier) che identifica una risorsa
+    su un server HTTP. Come vedremo in seguito, ogni richiesta HTTP è diretta a
+    un URI.
+
+
 ### Tools utilizzati
 
 Nel corso del documento, utilizzerò degli strumenti per mostrare il lato
@@ -243,7 +253,6 @@ HTTP/1.1 aggiunge altri cinque metodi:
 - OPTIONS
 - CONNECT
 
-Vediamo brevemente la funzione di ognuno di questi metodi.
 
 ##### GET
 Chiede di ottenere qualsiasi informazione (sotto forma di entità sia
@@ -323,6 +332,20 @@ Lo standard non è ancora stato approvato (e dunque PATCH non è un metodo
 ufficiale di HTTP/1.1) ma molti web framework (come ad esempio [Ruby on
 Rails][rails]) già supportano il metodo PATCH da diversi anni.
 
+#### Metodi *safe* e *idempotent*
+
+HTTP definisce anche due proprietà che questi alcuni di questi metodi devono
+avere: alcuni di questi metodi devono essere *safe* e/o *idempotent*.
+
+I metodi GET e HEAD devono essere *safe*, ovvero non possono modificare le
+risorse che identificano. Questo assicura al client la possibilità di eseguire
+richieste GET e HEAD senza preoccuparsi delle conseguenze. Si noti che solo le
+entità rappresentate dagli URL non devono essere modificate: una GET può ad
+esempio registrare la visita dell'utente su un database.
+
+I metodi *idempotent* sono metodi tali che gli effetti collaterali di N > 0
+richieste **identiche** siano gli stessi di quelli per una singola richiesta. I
+metodi GET, HEAD, PUT e DELETE devono soddisfare questa proprietà.
 
 #### Customizzazione dei metodi di richiesta
 
@@ -406,6 +429,89 @@ Per completezza, vediamo come è possibile effettuare richieste con metodi custo
 tramite curl:
 
     curl -X COPY example.com/doc/1
+
+#### Caso di studio con Rack
+
+Vediamo un piccolo caso di studio che ci aiuta a comprendere come potrebbe
+essere possibile raffinare un'applicazione web migliorando il supporto al
+protocollo HTTP.
+
+Costruiremo un **middleware** Rack che ci permetterà di intercettare le
+richieste di tipo TRACE per supportare questo metodo automaticamente. Un
+middleware Rack è semplicemente un pezzo di software in grado di intercettare
+richieste e modificarle o rispondervi preventivamente prima che la richiesta
+arrivi al server vero e proprio.
+
+``` ruby
+require 'rack'
+
+class TraceSupport
+  def initialize(app); @app = app; end
+
+  def call(env)
+    # Lasciamo che il normale server rack gestisca la richiesta se essa non è
+    # una TRACE.
+    return @app.call(env) if env['REQUEST_METHOD'] != 'TRACE'
+
+    # Costruiamo il body della risposta pezzo per pezzo.
+    mirror_request = ["TRACE #{env['PATH_INFO']} #{env['HTTP_VERSION']}\n"]
+    env.each do |header, value|
+      next unless header.start_with?('HTTP_')
+      h = header.sub('HTTP_', '').split('_').map(&:capitalize).join('-')
+      mirror_request << "#{h}: #{value}\n"
+    end
+    mirror_request << "\n" + env['rack.input'].string
+
+    # Rispondiamo con il body appena costruito.
+    [200, {}, mirror_request]
+  end
+end
+
+app = proc do |env|
+  body = ["Regular #{env['REQUEST_METHOD']} request"]
+  [200, { 'Content-Type' => 'text/plain' }, body]
+end
+
+handler = Rack::Builder.new do
+  # Utilizziamo il middleware TraceSupport.
+  use TraceSupport
+  run app
+end
+
+Rack::Handler::WEBrick.run handler
+```
+
+Facendo dei test con HTTPie vediamo che tutto funziona a dovere. Mandando una
+richiesta di tipo (ad esempio) GET, otteniamo in risposta il body predefinito:
+
+    http GET localhost:8080
+
+risponde con:
+
+``` bash
+Regular GET request
+```
+
+mentre effettuare una richiesta TRACE:
+
+``` bash
+# L'opzione '-p HBhb' mostra sulla console sia gli header che il body di
+# richiesta e risposta.
+http TRACE localhost:8080 -p HBhb
+```
+
+risponde come previsto con la richiesta effettuata:
+
+```
+TRACE / HTTP/1.1
+Host: localhost:8080
+Accept-Encoding: gzip, deflate
+Accept: */*
+User-Agent: HTTPie/0.8.0
+Version: HTTP/1.1
+```
+
+
 
 
 [rfc-http-1.0]: http://www.isi.edu/in-notes/rfc1945.txt
