@@ -31,6 +31,10 @@ un browser web.
 
 I messaggi HTTP possono essere **richieste** o **risposte**.
 
+TODO spiegare meglio  
+HTTP opera su risorse identificate da un URI (Uniform Resource Identifier) che
+coincide con la sezione di un indirizzo web corrispondente al *path*.
+
 
 ### Versioni di HTTP
 
@@ -222,14 +226,109 @@ Version: HTTP/1.1
 
 ### Metodo di richiesta
 
+HTTP definisce dei metodi (spesso chiamati anche *verbi*) che indicano l'azione
+da compiere su una determinata risorsa (identificata dal path della richiesta).
+
+I metodi definiti nello standard HTTP/1.0 erano solo tre:
+
+- GET
+- POST
+- HEAD
+
+HTTP/1.1 aggiunge altri cinque metodi:
+
+- PUT
+- DELETE
+- TRACE
+- OPTIONS
+- CONNECT
+
+Vediamo brevemente la funzione di ognuno di questi metodi.
+
+##### GET
+Chiede di ottenere qualsiasi informazione (sotto forma di entità sia
+identificata dallo Request-URI.
+
+La semantica della richiesta GET cambia se il messaggio di richiesta include
+anche alcuni header particolari come ad esempio `If-Modified-Since`: in questo
+caso la GET diventa una *GET condizionale*, che chiede al server di ottenere la
+risorsa solo sotto determinate condizioni (utilizzato ad esempio per caching,
+dove la condizione è che la risorsa sia stata modificata dall'ultima volta che
+si è richiesta).
+
+Le richieste inviate dal browser quando si visita un sito web a un certo URL
+sono sempre richieste di tipo GET.
+
+##### HEAD
+Il metodo HEAD è identico al metodo GET ma il server non deve ritornare un
+*body* con la risposta. Gli header in risposta devono essere esattamente gli
+stessi di quelli che sarebbero stati inviati in risposta a una GET.
+
+Spesso questo metodo viene usato per ottenere metainformazioni sull'entità
+identificata dall'URI senza trasferire il corpo della risposta (più veloce) o
+per testare la validità e l'accessibilità di link.
+
+##### POST
+Una richiesta POST ha (in genere) associato un body contenente informazioni.
+Questo metodo serve a creare una risorsa sul server o sostituire quella
+identificata dall'URI se già presente.  
+Questo metodo viene in genere associato alla *action* dei form HTML.
+
+##### PUT
+Il metodo PUT è simile al metodo POST. Differisce da esso in quanto con una
+richiesta PUT (il cui body contiene dati) si chiede al server di creare una
+risorsa (se questa operazione è possibile) o aggiornare una risorsa già
+esistente.
+
+##### DELETE
+Il metodo DELETE serve a chiedere al server di eliminare la risorsa identificata
+dal Request-URI.
+
+##### TRACE
+Quando riceve una richiesta TRACE, il server HTTP dovrebbe inviare
+in risposta esattamente la richiesta che esso ha ricevuto dal client. La
+richiesta ricevuta dovrebbe essere inserita nel body della risposta che si invia
+al client.  
+Questo metodo è utile al client in quanto gli permette di vedere esattamente
+cosa viene inviato al server.
+
+##### OPTIONS
+Il metodo OPTIONS è utilizzato per chiedere al server quali metodi HTTP sono
+disponibili per un dato Request-URI. Il server deve includere una lista di
+metodi HTTP disponibili nel body della risposta.  
+Da notare che se l'URI è `*`, la richiesta è intesa come una generica richiesta
+di conoscere quali metodi il server supporta (non per uno specifico URI, ma in
+generale).
+
+##### CONNECT
+Il metodo CONNECT non è esattamente specificato insieme agli altri metodi (nella
+sezione 9 della RFC 2616): lo standard HTTP/1.1 si riserva di usare il nome di
+metodo CONNECT per funzionalità di proxy e tunneling (viene principalmente usato
+per SSL).
 
 
+#### Un ulteriore metodo: PATCH
+
+Nel marzo 2010 è stato proposto un nuovo metodo HTTP ([RFC
+5789][rfc-patch-method]): il metodo PATCH.
+
+La giustificazione per l'introduzione di questo metodo che si può leggere nelle
+prime righe della RFC 5789 è che molte applicazioni web vogliono modificare
+*parti* di risorse piuttosto che aggiornare intere risorse.  
+Per questo scopo si è sempre usato il metodo PUT, ma (come descritto
+precedentemente) lo standard impone che una richiesta PUT sia utilizzata per
+creare o aggiornare una risorsa nella sua interezza.
+
+Lo standard non è ancora stato approvato (e dunque PATCH non è un metodo
+ufficiale di HTTP/1.1) ma molti web framework (come ad esempio [Ruby on
+Rails][rails]) già supportano il metodo PATCH da diversi anni.
 
 
 
 [rfc-http-1.0]: http://www.isi.edu/in-notes/rfc1945.txt
 [rfc-http-1.1]: http://www.ietf.org/rfc/rfc2616.txt
 [rfc-http-headers]: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
+[rfc-patch-method]: http://tools.ietf.org/html/rfc5789
 [wget]: https://www.gnu.org/software/wget/
 [curl]: http://curl.haxx.se/
 [httpie]: https://github.com/jakubroztocil/httpie
@@ -241,6 +340,7 @@ Version: HTTP/1.1
 [puma]: http://puma.io/
 [sinatra]: http://www.sinatrarb.com/
 [pip]: http://pip.readthedocs.org/en/latest/
+[rails]: http://rubyonrails.org/
 [apache-headers-limit]: http://httpd.apache.org/docs/2.2/mod/core.html#limitrequestfieldsize
 [stackexchange-problems-custom-methods]: http://programmers.stackexchange.com/questions/193821/are-there-any-problems-with-implementing-custom-http-methods
 [http-1.0-isnt-dead]: http://erlang.2086793.n4.nabble.com/Any-HTTP-1-0-clients-out-there-td2116037.html
