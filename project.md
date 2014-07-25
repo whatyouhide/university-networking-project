@@ -1,6 +1,6 @@
-# Custom HTTP request methods and response codes
+# HTTP - richieste, risposte e customizzazione
 
-##### Andrea Leopardi
+###### Andrea Leopardi
 ###### Reti di calcolatori (a.a. 2013/2014)
 
 
@@ -61,6 +61,9 @@ Nel corso del documento, utilizzerò degli strumenti per mostrare il lato
 lato server di HTTP in modo conciso e funzionale, e un client HTTP da command
 line per illustrare il lato client di HTTP.
 
+Questi esempi sono volti a mostrare come sia possibile modellare HTTP
+nella pratica.
+
 ##### Tools lato server
 
 Per il lato server di HTTP utilizzerò due strumenti:
@@ -77,14 +80,21 @@ Per il lato server di HTTP utilizzerò due strumenti:
 ##### Tools lato client
 
 Il più famoso tool (incluso di default in UNIX) utilizzato per eseguire
-richieste HTTP è sicuramente [*curl*]. *curl* ha una sintassi abbastanza
+richieste HTTP è sicuramente [*curl*][curl]. *curl* ha una sintassi abbastanza
 criptica (basti pensare all'opzione `-X`, che permette di specificare il metodo
 di richiesta HTTP) e dunque utilizzeremo un tool equivalente chiamato
 [HTTPie][httpie].
 
 HTTPie è un programma scritto in Python che permette di effettuare richieste
 HTTP con una sintassi "human-friendly": per questa ragione ogni volta che
-verrà utilizzato HTTPie sarà subito chiaro cosa si sta facendo.
+verrà utilizzato HTTPie sarà subito chiaro cosa si sta facendo. HTTPie può
+essere installato con [pip][pip] (`pip install httpie`) e mette a disposizione
+il comando `http`.
+
+Ecco un esempio di richiesta `GET` effettuata con HTTPie alla homepage di
+Google, filtrata in modo da mostrare solo gli header della risposta:
+
+    $ http GET google.com --headers
 
 
 ## Richieste HTTP
@@ -150,6 +160,70 @@ header. L'unica restrizione che HTTP impone è che gli headers definiti in RFC
 `X-Twitter-Username`.
 
 
+##### Headers con Rack (lato server)
+
+Con rack, quando gestiamo una richiesta HTTP, è possibile controllare
+direttamente gli header ricevuti nella richiesta. Vediamo un esempio in cui
+stampiamo tutti gli header ricevuti in una richiesta:
+
+``` ruby
+require 'rack'
+
+app = proc do |env|
+  # La variabile `env` è un dizionario che contiene headers CGI e di conseguenza
+  # gli header della richiesta HTTP sono individuati da chiavi prefissate con
+  # `HTTP_`. Questo handler processa una richiesta HTTP stampando tutti gli
+  # header HTTP della richiesta.
+  headers = env.select { |key, _| key.start_with?('HTTP_') }
+
+  headers = headers.map do |key, val|
+    header = key.sub /^HTTP_/, ''
+    header = header.split('_').map(&:capitalize).join('-')
+    "#{header}: #{val}\n"
+  end
+
+  [200, { 'Content-Type' => 'text/plain' }, headers]
+end
+
+Rack::Handler::WEBrick.run app
+```
+
+Facendo una richiesta GET a `localhost:8080` con HTTPie, verrà ritornato in
+risposta il plaintext contenente gli header della richiesta effettuata:
+
+```
+Host: localhost:8080
+Accept-Encoding: gzip, deflate
+Accept: */*
+User-Agent: HTTPie/0.8.0
+Version: HTTP/1.1
+```
+
+##### Headers con HTTPie (lato client)
+
+Possiamo controllare gli header da inviare con la richiesta HTTP tramite HTTPie
+semplicemente passando ad HTTPie argomenti della forma `HEADER:VALUE`. Con il
+comando che segue possiamo aggiungere l'header `Test-Header` e modificare
+l'header `User-Agent`.
+
+    http GET localhost:8080 'Test-Header:my test value' 'User-Agent:fake!'
+
+Confermiamo la modifica degli header ispezionando il plaintext ritornato in
+risposta dall'handler rack scritto poco fa:
+
+```
+Host: localhost:8080
+User-Agent: fake!
+Accept-Encoding: gzip, deflate
+Accept: */*
+Test-Header: my test value
+Version: HTTP/1.1
+```
+
+### Metodo di richiesta
+
+
+
 
 
 
@@ -166,6 +240,7 @@ header. L'unica restrizione che HTTP impone è che gli headers definiti in RFC
 [thin]: http://code.macournoyer.com/thin/
 [puma]: http://puma.io/
 [sinatra]: http://www.sinatrarb.com/
+[pip]: http://pip.readthedocs.org/en/latest/
 [apache-headers-limit]: http://httpd.apache.org/docs/2.2/mod/core.html#limitrequestfieldsize
 [stackexchange-problems-custom-methods]: http://programmers.stackexchange.com/questions/193821/are-there-any-problems-with-implementing-custom-http-methods
 [http-1.0-isnt-dead]: http://erlang.2086793.n4.nabble.com/Any-HTTP-1-0-clients-out-there-td2116037.html
