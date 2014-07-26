@@ -590,7 +590,7 @@ http POST localhost:8080 foo==bar
 Lato server:
 
 ```
-<body>I received a GET request.</body>
+<body>I received a POST request.</body>
 ```
 
 Se vogliamo inviare, tramite un form, una richiesta di tipo CUSTOM_REQUEST,
