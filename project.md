@@ -6,9 +6,9 @@
 
 ## Argomento analizzato
 
-In questo documento analizzerò più a fondo le richieste e le risposte HTTP,
-concentrandomi principalmente sui metodi di richiesta HTTP e i codici di
-risposta HTTP. Tratterò, meno approfonditamente, anche gli *header*
+In questo documento si analizzeranno più a fondo le richieste e le risposte
+HTTP, concentrandosi principalmente sui metodi di richiesta HTTP e i codici di
+risposta HTTP. Verranno trattati, meno approfonditamente, anche gli *header*
 HTTP.
 
 ## Introduzione ad HTTP
@@ -20,31 +20,35 @@ orientato alla connessione.
 
 HTTP è utilizzato per una vasta serie di scopi: web, streaming video,
 condivisione di file, connessioni a host remoti. Anche se l'acronimo HTTP si
-riferisce ad *Hyper Text* (ossia testo contenente hyperlink -- link logici ad
+riferisce ad *Hypertext* (ossia testo contenente hyperlink --- link logici ad
 altri documenti di testo), HTTP permette a host e client di scambiare qualsiasi
 tipo di dato.
 
 Sul lato server, HTTP viene implementato da un *server HTTP*, ovvero un
-programma in ascolto sulla porta 80 (tramite una socket quindi) dello host che
+programma in ascolto sulla porta 80 (tramite una socket) dell'host che
 funge da server. Il lato client viene eseguito, la maggior parte delle volte, da
-un browser web.
+un browser web, ma può essere eseguito anche da applicazioni per smartphone,
+tool da command line, elettrodomestici.
 
-I messaggi HTTP possono essere **richieste** o **risposte**.
+HTTP è un protocollo basato sullo scambio di messaggi; i messaggi HTTP possono
+essere **richieste** o **risposte**.
 
-TODO spiegare meglio  
-HTTP opera su risorse identificate da un URI (Uniform Resource Identifier) che
-coincide con la sezione di un indirizzo web corrispondente al *path*.
+Il client HTTP invia richieste HTTP al server, che risponde con risposte HTTP.
+Le richieste che il client invia al server sono sempre inviate a un URI
+(*Uniform Resource Identifier*) che coincide con la sezione di un URL
+corrispondente al *path* e che identifica univocamente una risorsa; ad esempio
+nell'URL `http://youtube.com/v/1`, l'URI è `/v/1`.
 
 
 ### Versioni di HTTP
 
-La prima versione di HTTP standardizzata fu HTTP/1.0, specificata nella [RFC
-1945][rfc-http-1.0] del 1996.
+La prima versione di HTTP ad essere standardizzata fu HTTP/1.0, specificata
+nella [RFC 1945][rfc-http-1.0] del 1996.
 
-Nel 1999, con la [RFC 2616][rfc-http-1.1] venne standardizzata la versione
-successiva del protocollo HTTP, ovvero HTTP/1.1. Non ci furono molti cambiamenti
-dalla versione 1.0 alla versione 1.1: esaminerò quelli interessanti nelle
-relative sezioni.
+Nel 1999, con la [RFC 2616][rfc-http-1.1], venne standardizzata la versione
+successiva del protocollo HTTP, ovvero HTTP/1.1. Non ci furono cambiamenti
+drastici dalla versione 1.0 alla versione 1.1: quelli interessanti verranno
+segnalati nelle relative sezioni.
 
 Nonostante HTTP/1.1 non sia molto più giovane di HTTP/1.0, esso è lo standard
 utilizzato ancora oggi. HTTP/1.0 [non è "morto"][http-1.0-isnt-dead] tuttavia:
@@ -52,65 +56,58 @@ molti proxy lo utilizzano, e anche dei client come [wget][wget].
 
 HTTP 2.0 (su [wikipedia][http-2.0-wikipedia] e [qui][http-2.0-website]) è la
 prossima versione del protocollo HTTP: nonostante sia in fase di sviluppo, essa
-non è ancora adottata per usi pratici.
+non è ancora adottata per usi pratici. Nel [Novembre 2014][http-2.0-milestones]
+è prevista la sottomissione dello standard HTTP 2.0 alla IESG perché essa
+diventi un *Proposed Standard*.
 
 Durante tutto il documento la versione di HTTP di riferimento (a meno che non
 specificato diversamente) sarà HTTP/1.1.
 
 Da notare che la semantica delle richieste e delle risposte HTTP/1.1 è stata
-recentemente (giugno 2014) rivista nella [RFC 7231][rfc-http-1.1-2014].
+recentemente (giugno 2014) rivista e aggiornata nella [RFC 7231][rfc-http-1.1-2014].
 La semantica di HTTP/1.1 non è stata cambiata in RFC 7231, ma alcune parti di
 HTTP sono descritte più a fondo, come ad esempio gli header di risposta.  
-In alcuni passaggi ci riferiremo a RFC 7231 (oltre che a RFC 2616), anche se
-rimane ancora un *proposed standard*.
-
-
-### Glossario dei concetti
-
-Introduciamo terminologia e concetti che saranno utili durante il corso del
-documento.
-
-- Request-URI: è un URI (Uniform Resource Identifier) che identifica una risorsa
-    su un server HTTP. Come vedremo in seguito, ogni richiesta HTTP è diretta a
-    un URI.
+RFC 7231 rimane ancora un *Proposed Standard*.
 
 
 ### Tools utilizzati
 
-Nel corso del documento, utilizzerò degli strumenti per mostrare il lato
-"pratico" di HTTP. Utilizzerò principalmente un web framework per illustrare il
-lato server di HTTP in modo conciso e funzionale, e un client HTTP da command
-line per illustrare il lato client di HTTP.
+Nel corso del documento verranno utilizzati degli strumenti per mostrare il lato
+"pratico" di HTTP. Si è scelto di utilizzare un tool per l'interfacciamento con
+server per mostrare il lato server di HTTP in modo conciso e funzionale, e un
+client HTTP da command line per illustrare il lato client di HTTP.
 
-Questi esempi sono volti a mostrare come sia possibile modellare HTTP
-nella pratica.
+Gli esempi presenti nel documento sono volti a mostrare come sia possibile
+interagire con HTTP nella pratica.
 
 ##### Tools lato server
 
-Per il lato server di HTTP utilizzerò [Rack][rack]. Rack può essere considerato
-un web server scritto in Ruby. In realtà esso è un'astrazione che permette di
-scrivere codice lato server che poi può essere utilizzato con diversi server
-(veri e propri) scritti in Ruby, come [WEBrick][webrick] (incluso nelle librerie
-standard di Ruby), [Thin][thin] o [Puma][puma].
+Per il lato server di HTTP verrà utilizzato [Rack][rack]. Rack può essere
+considerato un web server scritto in Ruby: in realtà esso è un'astrazione che
+permette di scrivere codice lato server che poi può essere utilizzato con
+diversi server (veri e propri) scritti in Ruby, come ad esempio
+[WEBrick][webrick] (incluso nelle librerie standard di Ruby) o [Thin][thin].
 
 ##### Tools lato client
 
-Il più famoso tool (incluso di default in UNIX) utilizzato per eseguire
-richieste HTTP è sicuramente [*curl*][curl]. *curl* ha una sintassi abbastanza
-criptica (basti pensare all'opzione `-X`, che permette di specificare il metodo
-di richiesta HTTP) e dunque utilizzeremo un tool equivalente chiamato
+Il più famoso tool da command line (incluso di default in UNIX) utilizzato per
+eseguire richieste HTTP è sicuramente [*curl*][curl]. *curl* ha una sintassi
+abbastanza criptica (basti pensare all'opzione `-X`, che permette di specificare
+il metodo di richiesta HTTP) e dunque utilizzeremo un tool equivalente chiamato
 [HTTPie][httpie].
 
 HTTPie è un programma scritto in Python che permette di effettuare richieste
-HTTP con una sintassi "human-friendly": per questa ragione ogni volta che
-verrà utilizzato HTTPie sarà subito chiaro cosa si sta facendo. HTTPie può
-essere installato con [pip][pip] (`pip install httpie`) e mette a disposizione
-il comando `http`.
+HTTP con una sintassi "human-friendly"; la sua sintassi verrà illustrata nel
+corso degli esempi. HTTPie può essere installato con [pip][pip] (`pip install
+httpie`) e mette a disposizione il comando `http`.
 
-Ecco un esempio di richiesta `GET` effettuata con HTTPie alla homepage di
-Google, filtrata in modo da mostrare solo gli header della risposta:
+Per illustrare un esempio di utilizzo di HTTPie, segue un esempio di richiesta
+`GET` effettuata alla homepage di Google, filtrata in modo da mostrare solo gli
+headers della risposta:
 
-    $ http GET google.com --headers
+``` bash
+http GET google.com --headers
+```
 
 
 ## Richieste HTTP
@@ -120,7 +117,7 @@ Una richiesta HTTP è formata da un'intestazione e un corpo opzionale.
 L'intestazione è formata da:
 
 - una riga di richiesta formata in ordine da metodo di richiesta, path sul
-    server e versione di HTTP, separati da un singolo spazio
+    server (*Request-URI*) e versione di HTTP, separati da un singolo spazio
 - zero o più *headers* nella forma `HEADER-NAME: value`
 - una riga vuota
 - un "corpo" opzionale contenente una quantità arbitraria di dati
@@ -144,16 +141,18 @@ User-Agent: Mozilla Firefox
 image_name=foo
 ```
 
-È chiara la funzionalità della versione di HTTP. Il body non fa altro che
-trasferire dati al server. Vediamo più a fondo metodo di richiesta e headers.
+È chiara la funzionalità della versione di HTTP; il body non fa altro che
+trasferire dati al server. Studiamo più a fondo la funzionalità di metodo di
+richiesta e di headers di richiesta.
 
 ### Headers di richiesta
 
 Gli header vengono utilizzati per comunicare metainformazioni (informazioni che
 non riguardano il payload di dati) dal client al server.  
-L'unico header obbligatorio (e solo in HTTP/1.1) è l'header `Host`, che permette
-allo stesso server HTTP di servire diversi contenuti in base al dominio nello
-header `Host`. Altri header degni di nota sono:
+In HTTP/1.0 non ci sono header obbligatori, mentre in HTTP/1.1 l'unico header
+obbligatorio è l'header `Host`, che permette allo stesso server HTTP di servire
+diversi contenuti in base al dominio nell'header `Host`. Altri header degni di
+nota sono:
 
 - `User-Agent`: comunica al server con che client (che browser ad esempio) si
     sta effettuando la richiesta.
@@ -162,25 +161,39 @@ header `Host`. Altri header degni di nota sono:
     ottenere in risposta alla richiesta.
 - `Accept-Charset`: il set di caratteri (ad esempio UTF-8) che il client è
     in grado di a ricevere.
+- `If-Modified-Since`: è utilizzato dal client (spesso da proxy server in
+    realtà) per richiedere una risorsa solo se non è stata modificata
+    dall'ultima volta che si è richiesta. La funzione di questo e altri header
+    simili è dunque volta all'implementazione di un sistema di caching.
 
 Molti altri header sono standardizzati nella RFC 2616 (nella [sezione
 14][rfc-http-headers]).
 
 Da notare che HTTP non impone un limite al numero di header utilizzabili (anche
 se molti web server impongono un limite effettivo alla grandezza
-dell'intestazione, ad esempio Apache che [limita la grandezza a
-8kb][apache-headers-limit]) né impone regolazioni su *quali* debbano essere gli
-header. L'unica restrizione che HTTP impone è che gli headers definiti in RFC
-2616 siano conformi alla RFC stessa.  
-È comune la convenzione di prefissare gli header custom con una `X`, ad esempio
-`X-Twitter-Username`.
+dell'intestazione. Ad esempio Apache [limita la
+grandezza][apache-headers-limit]) dell'intestazione HTTP (riga di richiesta più
+header) a 8kb.  
+HTTP, inoltre, non impone regolazioni su *quali* debbano essere gli header.
+L'unica restrizione imposta è che gli headers definiti in RFC 2616 siano
+conformi alla RFC stessa.
+
+È comune la convenzione di prefissare gli header non standardizzati con una
+`X-`, ad esempio `X-Twitter-Username`, anche se questa pratica è stata deprecata
+nel giugno 2012 (come riporta [Wikipedia][x-headers-deprecated]) con la [RFC
+6648][rfc-deprecating-x-prefix] in quanto creava problemi quando headers non
+standard venivano standardizzati.
+
+Una lista più che comprensiva di headers (sia standard che non, e che comprende
+in realtà anche headers di risposta oltre che di richiesta) è mantenuta dalla
+IANA ed è disponibile [qui][iana-headers].
 
 
 ##### Headers con Rack (lato server)
 
-Con rack, quando gestiamo una richiesta HTTP, è possibile controllare
+Con rack, quando si gestisce una richiesta HTTP, è possibile controllare
 direttamente gli header ricevuti nella richiesta. Vediamo un esempio in cui
-stampiamo tutti gli header ricevuti in una richiesta:
+vengono stampati tutti gli header ricevuti in una richiesta:
 
 ``` ruby
 require 'rack'
@@ -225,7 +238,7 @@ l'header `User-Agent`.
     http GET localhost:8080 'Test-Header:my test value' 'User-Agent:fake!'
 
 Confermiamo la modifica degli header ispezionando il plaintext ritornato in
-risposta dall'handler rack scritto poco fa:
+risposta dall'handler Rack scritto poco fa:
 
 ```
 Host: localhost:8080
@@ -236,12 +249,12 @@ Test-Header: my test value
 Version: HTTP/1.1
 ```
 
-### Metodo di richiesta
+### Metodi di richiesta
 
 HTTP definisce dei metodi (spesso chiamati anche *verbi*) che indicano l'azione
 da compiere su una determinata risorsa (identificata dal path della richiesta).
 
-I metodi definiti nello standard HTTP/1.0 erano solo tre:
+I metodi definiti nello standard HTTP/1.0 sono solo tre:
 
 - GET
 - POST
@@ -257,8 +270,8 @@ HTTP/1.1 aggiunge altri cinque metodi:
 
 
 ##### GET
-Chiede di ottenere qualsiasi informazione (sotto forma di entità sia
-identificata dallo Request-URI.
+Chiede di ottenere qualsiasi informazione (sotto forma di entità) sia
+identificata dal Request-URI.
 
 La semantica della richiesta GET cambia se il messaggio di richiesta include
 anche alcuni header particolari come ad esempio `If-Modified-Since`: in questo
@@ -283,7 +296,7 @@ per testare la validità e l'accessibilità di link.
 Una richiesta POST ha (in genere) associato un body contenente informazioni.
 Questo metodo serve a creare una risorsa sul server o sostituire quella
 identificata dall'URI se già presente.  
-Questo metodo viene in genere associato alla *action* dei form HTML.
+Questo metodo viene in genere associato alla `action` dei form HTML.
 
 ##### PUT
 Il metodo PUT è simile al metodo POST. Differisce da esso in quanto con una
@@ -450,6 +463,13 @@ tramite curl:
 ``` bash
 curl -X COPY example.com/doc/1
 ```
+
+Anche nel browser (ad esempio in Google Chrome) è possibile vedere le richieste
+HTTP che il browser ha effettuato. In Google Chrome, c'è una sezione dei
+DevTools (gli strumenti del browser dedicati agli sviluppatori) dedicata a
+questo scopo.
+
+![DevTools](images/dev-tools-requests.png)
 
 #### Casi di studio con Rack
 
@@ -769,7 +789,7 @@ azioni (onde evitare loop infiniti).
 ##### 4xx Client Error
 Indicano che il client ha commesso un errore (come una richiesta malformata o un
 URL non esistente). Il body di una risposta con codice 4xx può contenere una
-spiegazione dettagliata dell'errore -- basti pensare alle note pagine 404 in cui
+spiegazione dettagliata dell'errore --- basti pensare alle note pagine 404 in cui
 viene comunque inviato in risposta un documento HTML che spiega al client
 l'errore avvenuto.
 
@@ -809,15 +829,17 @@ una richiesta (apparentemente) valida.
 [rfc-http-headers]: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
 [rfc-patch-method]: http://tools.ietf.org/html/rfc5789
 [rfc-htcpcp]: http://tools.ietf.org/html/rfc2324
+[rfc-deprecating-x-prefix]: http://tools.ietf.org/html/rfc6648
+[iana-headers]: http://www.iana.org/assignments/message-headers/message-headers.xml
 [wget]: https://www.gnu.org/software/wget/
 [curl]: http://curl.haxx.se/
 [httpie]: https://github.com/jakubroztocil/httpie
 [http-2.0-wikipedia]: http://en.wikipedia.org/wiki/HTTP_2.0
 [http-2.0-website]: http://http2.github.io/
+[http-2.0-milestones]: http://en.wikipedia.org/wiki/HTTP_2.0#Development_Milestones
 [rack]: http://rack.github.io/
 [webrick]: http://ruby-doc.org/stdlib-2.1.2/libdoc/webrick/rdoc/WEBrick.html
 [thin]: http://code.macournoyer.com/thin/
-[puma]: http://puma.io/
 [sinatra]: http://www.sinatrarb.com/
 [pip]: http://pip.readthedocs.org/en/latest/
 [rails]: http://rubyonrails.org/
@@ -826,6 +848,7 @@ una richiesta (apparentemente) valida.
 [twitter-api]: https://dev.twitter.com/
 [twitter-api-error-codes]: https://dev.twitter.com/docs/error-codes-responses
 [programmers-stackexchange]: http://programmers.stackexchange.com/
+[x-headers-deprecated]: http://en.wikipedia.org/wiki/List_of_HTTP_header_fields
 [stackoverflow-custom-codes]: http://stackoverflow.com/questions/7996569/can-we-create-custom-http-status-codes
 [apache-headers-limit]: http://httpd.apache.org/docs/2.2/mod/core.html#limitrequestfieldsize
 [stackexchange-custom-methods]: http://programmers.stackexchange.com/questions/193821/are-there-any-problems-with-implementing-custom-http-methods
