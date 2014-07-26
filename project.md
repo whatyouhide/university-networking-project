@@ -57,6 +57,13 @@ non è ancora adottata per usi pratici.
 Durante tutto il documento la versione di HTTP di riferimento (a meno che non
 specificato diversamente) sarà HTTP/1.1.
 
+Da notare che la semantica delle richieste e delle risposte HTTP/1.1 è stata
+recentemente (giugno 2014) rivista nella [RFC 7231][rfc-http-1.1-2014].
+La semantica di HTTP/1.1 non è stata cambiata in RFC 7231, ma alcune parti di
+HTTP sono descritte più a fondo, come ad esempio gli header di risposta.  
+In alcuni passaggi ci riferiremo a RFC 7231 (oltre che a RFC 2616), anche se
+rimane ancora un *proposed standard*.
+
 
 ### Glossario dei concetti
 
@@ -145,7 +152,7 @@ image_name=foo
 È chiara la funzionalità della versione di HTTP. Il body non fa altro che
 trasferire dati al server. Vediamo più a fondo metodo di richiesta e headers.
 
-### Headers
+### Headers di richiesta
 
 Gli header vengono utilizzati per comunicare metainformazioni (informazioni che
 non riguardano il payload di dati) dal client al server.  
@@ -515,10 +522,64 @@ Version: HTTP/1.1
 ```
 
 
+## Risposte HTTP
+
+Una risposta HTTP *well-formed* è composta da:
+
+- Una **riga di stato** dalla forma `[HTTP_VERSION] [STATUS_CODE] [MESSAGE]`;
+    analizzeremo a fondo gli *status codes* a breve.
+- Header di risposta (dalla forma identica agli header di richiesta: uno per
+    linea, separati da *carriage return* e *line feed*).
+- Una riga vuota (con solo un *carriage return* seguito da un *line feed*),
+    analogamente a una richiesta HTTP.
+- Un body di risposta *opzionale* (che costituisce il contenuto che il server
+    risponde al client, ad esempio un'immagine o una pagina web).
+
+
+Vediamo un esempio di risposta HTTP inviata da un server Apache a un client che
+ha inviato una GET (ad esempio all'indirizzo `/welcome.html`):
+
+```
+HTTP/1.1 200 OK
+Server: Apache/1.3.3.7
+Content-Type: text/html
+Connection: close
+
+<html><body>Welcome!</body></html>
+```
+
+
+Esaminiamo più a fondo header di risposta e *status codes*.
+
+### Headers di risposta
+
+Nella forma, gli headers di risposta sono identici a gli header di richiesta:
+`[HEADER_NAME]: [HEADER_VALUE]`.
+
+Vediamo alcuni degli header di risposta più noti:
+
+- `Connection`: ha stessa semantica dello header di richiesta `Connection`, ovvero
+    decide se la connessione sia permanente o se debba essere chiusa appena la
+    risposta è stata inviata.
+- `Content-Length`: lunghezza del body di risposta in bytes.
+- `Content-Type`: rappresenta il *MIME type* del body della risposta. È
+    utilizzato, ad esempio, per istruire il browser se interpretare un documento
+    di testo come HTML o come plaintext.
+- `Last-Modified`: l'ultima data di modifica per la risorsa richiesta. Questo
+    header è spesso utilizzato per implementare delle cache (ad esempio da proxy
+    server).
+- `Server`: il nome del server che sta rispondendo alla richiesta. Non è
+    obbligatorio che il nome del server sia effettivamente corrispondente al
+    server che si sta utilizzando.
+
+Molti altri headers sono standardizzati in RFC 7231, e sono utilizzati
+frequentemente anche se la suddetta RFC è ancora un *proposed standard*.
+
 
 
 [rfc-http-1.0]: http://www.isi.edu/in-notes/rfc1945.txt
 [rfc-http-1.1]: http://www.ietf.org/rfc/rfc2616.txt
+[rfc-http-1.1-2014]: http://tools.ietf.org/html/rfc7231
 [rfc-http-headers]: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
 [rfc-patch-method]: http://tools.ietf.org/html/rfc5789
 [wget]: https://www.gnu.org/software/wget/
