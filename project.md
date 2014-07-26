@@ -403,7 +403,7 @@ li implementa.
 
 ###### Supporto
 
-La maggior parte dei server web (Apache, Nginx) supportano metodi custom, così
+La maggior parte dei server web (Apache, nginx) supportano metodi custom, così
 come la maggior parte dei client (ad esempio è possibile effettuare richieste
 cone metodi custom tramite Ajax in JavaScript).
 
@@ -412,7 +412,7 @@ cone metodi custom tramite Ajax in JavaScript).
 [WebDAV][webdav] (Web Distributed Authoring and Versioning) è un set di
 estensioni ad HTTP che permette a utenti di modificare documenti online in
 collaborazione con altri utenti. WebDAV aggiunge diversi metodi di richiesta
-custom (come COPY, MOVE, MKCOL) ad HTTP.
+custom (come COPY e MOVE) ad HTTP.
 
 Anche WebDAV è soggetto alle stesse critiche esposte precedentemente; l'unico
 pregio in più di questo "protocollo" è che è ben documentato e standardizzato.
@@ -423,12 +423,16 @@ Con HTTPie è possibile effettuare richieste con qualsiasi metodo tramite la
 sintassi `http [REQUEST_METHOD] [URL]`. Ad esempio è possibile effettuare una
 richiesta di tipo COPY a `example.com/doc/1` nel seguente modo:
 
-    http COPY example.com/doc/1
+``` bash
+http COPY example.com/doc/1
+```
 
 Per completezza, vediamo come è possibile effettuare richieste con metodi custom
 tramite curl:
 
-    curl -X COPY example.com/doc/1
+``` bash
+curl -X COPY example.com/doc/1
+```
 
 #### Caso di studio con Rack
 
@@ -482,25 +486,24 @@ Rack::Handler::WEBrick.run handler
 ```
 
 Facendo dei test con HTTPie vediamo che tutto funziona a dovere. Mandando una
-richiesta di tipo (ad esempio) GET, otteniamo in risposta il body predefinito:
+richiesta di tipo (ad esempio) GET, otteniamo in risposta il body predefinito.
 
-    http GET localhost:8080
-
-risponde con:
+``` bash
+http GET localhost:8080
+```
 
 ``` bash
 Regular GET request
 ```
 
-mentre effettuare una richiesta TRACE:
+Effettuando una richiesta TRACE, invece, il server risponde con un *mirror*
+della richiesta effettuata:
 
 ``` bash
 # L'opzione '-p HBhb' mostra sulla console sia gli header che il body di
 # richiesta e risposta.
 http TRACE localhost:8080 -p HBhb
 ```
-
-risponde come previsto con la richiesta effettuata:
 
 ```
 TRACE / HTTP/1.1
