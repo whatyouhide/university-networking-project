@@ -87,16 +87,11 @@ nella pratica.
 
 ##### Tools lato server
 
-Per il lato server di HTTP utilizzerò due strumenti:
-
-- [Rack][rack]: Rack può essere considerato un web server scritto in Ruby. In
-    realtà esso è un'astrazione che permette di scrivere codice lato server che
-    poi può essere utilizzato con diversi server (veri e propri) scritti in
-    Ruby, come [WEBrick][webrick] (incluso nelle librerie standard di Ruby),
-    [Thin][thin] o [Puma][puma].
-- [Sinatra][sinatra]: Sinatra è un vero e proprio web framework scritto in Ruby.
-    Sinatra permette, con un DSL (*Domain Specific Language*) chiaro e conciso,
-    di processare richieste HTTP e generare risposte HTTP.
+Per il lato server di HTTP utilizzerò [Rack][rack]. Rack può essere considerato
+un web server scritto in Ruby. In realtà esso è un'astrazione che permette di
+scrivere codice lato server che poi può essere utilizzato con diversi server
+(veri e propri) scritti in Ruby, come [WEBrick][webrick] (incluso nelle librerie
+standard di Ruby), [Thin][thin] o [Puma][puma].
 
 ##### Tools lato client
 
@@ -414,6 +409,21 @@ La maggior parte dei server web (Apache, nginx) supportano metodi custom, così
 come la maggior parte dei client (ad esempio è possibile effettuare richieste
 cone metodi custom tramite Ajax in JavaScript).
 
+Un problema che si pone frequentemente, tuttavia, è il seguente: i form HTML
+(anche HTML5) supportano solo i metodi di richiesta GET e POST tramite
+l'attributo `action`. Frequentemente, tuttavia, si vogliono usare dei tag
+`<form>` per, ad esempio, modificare una risorsa sul server. Per questo si
+vorrebbe usare una richiesta PUT.
+
+[Ruby on Rails][rails] (come molti altri) usa un *workaround* per ovviare a
+questo problema: usare un campo `<input>` con l'attributo `type="hidden"` (in
+modo che non compaia nel DOM e non mostrato dal browser) che specifichi il tipo
+di richiesta. Il client può, a questo punto, utilizzare qualsiasi metodo di
+richiesta HTTP (anche custom) con form HTML.
+
+Nella sezione contenente esempi pratici con Rack vedremo anche un esempio
+riguardante questo argomento.
+
 ###### WebDAV
 
 [WebDAV][webdav] (Web Distributed Authoring and Versioning) è un set di
@@ -441,7 +451,9 @@ tramite curl:
 curl -X COPY example.com/doc/1
 ```
 
-#### Caso di studio con Rack
+#### Casi di studio con Rack
+
+###### Metodi di richiesta custom
 
 Vediamo un piccolo caso di studio che ci aiuta a comprendere come potrebbe
 essere possibile raffinare un'applicazione web migliorando il supporto al
@@ -519,6 +531,80 @@ Accept-Encoding: gzip, deflate
 Accept: */*
 User-Agent: HTTPie/0.8.0
 Version: HTTP/1.1
+```
+
+###### Metodi di richiesta e form HTML
+
+Come illustrato precedentemente, i form HTML possono inviare solo richieste GET
+e POST. Vediamo un piccolo middleware Rack in grado di intercettare le richieste
+dirette al server principale e trasformare richieste che nell'URL hanno un
+parametro `__method` in richieste custom che come metodo hanno il metodo
+descritto dall'attributo `__method`.
+
+``` ruby
+require 'rack'
+
+class CustomRequestMethods
+  def initialize(app); @app = app; end
+
+  def call(env)
+    # "Wrappiamo" la richiesta in un oggetto Rack::Request in modo da poter
+    # utilizzare diverse funzioni utili come il parsing dei parametri.
+    req = Rack::Request.new(env)
+
+    # Sostituiamo `env['REQUEST_METHOD']` se è presente un parametro `__type`.
+    if req.params['__method']
+      env['REQUEST_METHOD'] = req.params['__method']
+    end
+
+    @app.call(env)
+  end
+end
+
+# Il server principale risponderà con un body in cui stampa il metodo di
+# richiesta della richiesta che ha ricevuto (in realtà della richiesta
+# possibilmente alterata dal middleware CustomRequestMethods che riceve).
+server = proc do |env|
+  body = "<body>I received a #{env['REQUEST_METHOD']} request.</body>"
+  [200, { 'Content-Type' => 'text/html' }, [body]]
+end
+
+Rack::Handler::WEBrick.run(
+  Rack::Builder.new { use CustomRequestMethods; run server }
+)
+```
+
+Il server invierà, in risposta alle richieste, un messaggio in cui comunica con
+quale metodo è stata effettuata la richiesta.
+
+Effettuando una semplice richiesta POST al server otteniamo il risultato
+aspettato, ossia il server risponde comunicando che ha ricevuto una richiesta
+POST.
+
+``` bash
+# La sintassi HTTPie name==value indica una coppia nome-valore da inviare nel
+# body della richiesta.
+http POST localhost:8080 foo==bar
+```
+
+Lato server:
+
+```
+<body>I received a GET request.</body>
+```
+
+Se vogliamo inviare, tramite un form, una richiesta di tipo CUSTOM_REQUEST,
+possiamo semplicemente inviare il parametro `__type=CUSTOM_REQUEST`:
+
+``` bash
+http POST localhost:8080 foo==bar __type==CUSTOM_REQUEST
+```
+
+Il server risponderà correttamente mostrando che la richiesta da lui "percepita"
+è effettivamente una richiesta di tipo CUSTOM_REQUEST:
+
+```
+<body>I received a CUSTOM_REQUEST request.</body>
 ```
 
 
@@ -622,6 +708,10 @@ all'impossibilità di gestire la quantità di richieste.
 
 Anche WebDAV definisce alcuni status code custom (oltre a metodi di richiesta
 HTTP custom).
+
+Come i metodi di richiesta custom, tuttavia, molti si schierano contro la
+customizzazione degli status codes: basti vedere le opinioni espresse nei
+commenti [qui][stackoverflow-custom-codes].
 
 
 #### Status codes in dettaglio
@@ -736,6 +826,7 @@ una richiesta (apparentemente) valida.
 [twitter-api]: https://dev.twitter.com/
 [twitter-api-error-codes]: https://dev.twitter.com/docs/error-codes-responses
 [programmers-stackexchange]: http://programmers.stackexchange.com/
+[stackoverflow-custom-codes]: http://stackoverflow.com/questions/7996569/can-we-create-custom-http-status-codes
 [apache-headers-limit]: http://httpd.apache.org/docs/2.2/mod/core.html#limitrequestfieldsize
 [stackexchange-custom-methods]: http://programmers.stackexchange.com/questions/193821/are-there-any-problems-with-implementing-custom-http-methods
 [http-1.0-isnt-dead]: http://erlang.2086793.n4.nabble.com/Any-HTTP-1-0-clients-out-there-td2116037.html
