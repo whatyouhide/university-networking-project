@@ -288,7 +288,7 @@ li implementa.
 
 La maggior parte dei server web (Apache, nginx) supportano metodi custom, così
 come la maggior parte dei client (ad esempio è possibile effettuare richieste
-cone metodi custom tramite Ajax in JavaScript).
+con metodi custom tramite Ajax in JavaScript).
 
 Un problema che si pone frequentemente, tuttavia, è il seguente: i form HTML
 (anche HTML5) supportano solo i metodi di richiesta GET e POST tramite
@@ -298,8 +298,8 @@ vorrebbe usare una richiesta PUT.
 
 [Ruby on Rails][rails] (come molti altri) usa un *workaround* per ovviare a
 questo problema: usare un campo `<input>` con l'attributo `type="hidden"` (in
-modo che non compaia nel DOM e non mostrato dal browser) che specifichi il tipo
-di richiesta. Il client può, a questo punto, utilizzare qualsiasi metodo di
+modo che non compaia nel DOM e non venga mostrato dal browser) che specifichi il
+tipo di richiesta. Il client può, a questo punto, utilizzare qualsiasi metodo di
 richiesta HTTP (anche custom) con form HTML.
 
 Nella sezione contenente esempi pratici con Rack vedremo anche un esempio
@@ -341,9 +341,9 @@ questo scopo:
 
 #### Casi di studio con Rack
 
-###### Supporto automatico a TRACE
+##### Supporto automatico a TRACE
 
-Vediamo un piccolo caso di studio che ci aiuta a comprendere come potrebbe
+Vediamo un piccolo caso di studio che ci aiuti a comprendere come potrebbe
 essere possibile raffinare un'applicazione web migliorando il supporto al
 protocollo HTTP.
 
@@ -363,7 +363,7 @@ http GET localhost:8080
 ```
 
 ``` bash
-Regular GET request
+<body>Regular GET request</body>
 ```
 
 Effettuando una richiesta TRACE, invece, il server risponde con un *mirror*
@@ -384,7 +384,7 @@ User-Agent: HTTPie/0.8.0
 Version: HTTP/1.1
 ```
 
-###### Metodi di richiesta e form HTML
+##### Metodi di richiesta e form HTML
 
 Come illustrato precedentemente, i form HTML possono inviare solo richieste GET
 e POST. Vediamo un piccolo middleware Rack in grado di intercettare le richieste
@@ -414,10 +414,10 @@ Lato server:
 ```
 
 Se vogliamo inviare, tramite un form, una richiesta di tipo CUSTOM_REQUEST,
-possiamo semplicemente inviare il parametro `__type=CUSTOM_REQUEST`:
+possiamo semplicemente inviare il parametro `__method=CUSTOM_REQUEST`:
 
 ``` bash
-http POST localhost:8080 foo==bar __type==CUSTOM_REQUEST
+http POST localhost:8080 foo==bar __method==CUSTOM_REQUEST
 ```
 
 Il server risponderà correttamente mostrando che la richiesta da lui "percepita"

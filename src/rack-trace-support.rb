@@ -23,8 +23,8 @@ class TraceSupport
 end
 
 app = proc do |env|
-  body = ["Regular #{env['REQUEST_METHOD']} request"]
-  [200, { 'Content-Type' => 'text/plain' }, body]
+  body = ["<body>Regular #{env['REQUEST_METHOD']} request</body>"]
+  [200, { 'Content-Type' => 'text/html' }, body]
 end
 
 handler = Rack::Builder.new do

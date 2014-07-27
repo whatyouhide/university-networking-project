@@ -48,7 +48,7 @@ alla fine del documento, verrà introdotto brevemente il caching in HTTP.
 [http-2.0-milestones]: http://en.wikipedia.org/wiki/HTTP_2.0#Development_Milestones
 [rack]: http://rack.github.io/
 [webrick]: http://ruby-doc.org/stdlib-2.1.2/libdoc/webrick/rdoc/WEBrick.html
-[thin]: http://code.macournoyer.com/thin/
+[thin]: https://github.com/macournoyer/thin/
 [sinatra]: http://www.sinatrarb.com/
 [pip]: http://pip.readthedocs.org/en/latest/
 [rails]: http://rubyonrails.org/

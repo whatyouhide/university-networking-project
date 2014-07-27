@@ -8,7 +8,7 @@ class CustomRequestMethods
     # utilizzare diverse funzioni utili come il parsing dei parametri.
     req = Rack::Request.new(env)
 
-    # Sostituiamo `env['REQUEST_METHOD']` se è presente un parametro `__type`.
+    # Sostituiamo `env['REQUEST_METHOD']` se è presente un parametro `__method`.
     if req.params['__method']
       env['REQUEST_METHOD'] = req.params['__method']
     end
