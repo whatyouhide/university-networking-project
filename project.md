@@ -8,8 +8,8 @@
 
 In questo documento si analizzeranno più a fondo le richieste e le risposte
 HTTP, concentrandosi principalmente sui metodi di richiesta HTTP e i codici di
-risposta HTTP. Verranno trattati, meno approfonditamente, anche gli *header*
-HTTP.
+risposta HTTP. Verranno trattati meno approfonditamente anche gli *header*
+HTTP e, alla fine del documento, verrà introdotto brevemente il caching in HTTP.
 
 ## Introduzione ad HTTP
 
@@ -65,9 +65,21 @@ specificato diversamente) sarà HTTP/1.1.
 
 Da notare che la semantica delle richieste e delle risposte HTTP/1.1 è stata
 recentemente (giugno 2014) rivista e aggiornata nella [RFC 7231][rfc-http-1.1-2014].
-La semantica di HTTP/1.1 non è stata cambiata in RFC 7231, ma alcune parti di
-HTTP sono descritte più a fondo, come ad esempio gli header di risposta.  
-RFC 7231 rimane ancora un *Proposed Standard*.
+
+Le RFC da 7230 a 7235 (che descrivono HTTP nelle sue diverse parti, come
+richieste e risposte, autenticazione, caching) sono diventati lo standard *de
+facto* di HTTP/1.1 ([esempio][rfc-2616-is-dead]).  
+Spesso durante il documento ci si riferirà esplicitamente a RFC 2616 in quanto
+le nuove RFC sono principalmente chiarimenti e precisazioni di quanto descritto
+in RFC 2616. Come si può leggere nelle [appendici][rfc-7231-vs-rfc-2616] della
+RFC 7231 (e delle altre con codice 7230-7235) non ci sono cambiamenti
+sostanziali nella specifica di HTTP.
+
+Il motivo per cui è stato necessario proporre un nuovo standard per HTTP/1.1 è
+che lo standard originale definito in RFC 2616 risale al 1999, tempo in cui il
+web serviva ad altri scopi rispetto a quelli per cui è utilizzato oggi: non
+c'erano le web API (uno dei motori principali che ha fatto nascere la necessità
+di un nuovo standard), Ajax o HTML5.
 
 
 ### Tools utilizzati
@@ -828,6 +840,76 @@ una richiesta (apparentemente) valida.
     di HTTP specificata nella riga di richiesta.
 
 
+## Caching
+
+La cache è una componente delle architetture software che salva copie di dati
+richiesti in modo da evitare il ritrasferimento degli stessi dati in richieste
+successive.
+
+HTTP fornisce molti meccanismi di caching: ad esempio ETag, GET condizionali, o
+`Cache-Control`.
+
+Poiché il caching in HTTP è un argomento di fondamentale importanza (tanto da
+essere descritto in un RFC dedicato - [RFC 7234][rfc-http-caching]) la
+trattazione che segue è sintetica e concentrata solo sulla tecnica di caching
+basata sull'utilizzo di ETag.
+
+La maggior parte delle tecniche di caching HTTP si basa sull'utilizzo di GET
+condizionali: una GET condizionale è una normale richiesta GET accompagnata da
+specifici header (ad esempio `If-Modified-Since` o `If-None-Match`) che
+consentono al server di decidere se rispondere alla richiesta come se fosse una
+normale GET o se rispondere con una risposta senza body (con codice 304 Not
+Modified) in quanto il client è già in possesso della risorsa richiesta.
+
+### ETag
+
+ETag (*entity tag*) fa parte del protocollo HTTP ed è definita nella [sezione
+14.19][rfc-etag] della RFC 2616.
+
+Una ETag è un identificatore univoco che un web server assegna a una **versione**
+di una risorsa. Di conseguenza, se il contenuto di una risorsa cambia, cambierà
+sicuramente anche il suo ETag. Questo meccanismo a "impronta digitale" permette
+ai client che richiedono la risorsa al server di cachare la risorsa con la
+certezza che si verrà a conoscenza del momento in cui la risorsa andrà a
+cambiare.
+
+Il metodo di generazione delle ETag non è parte della specifica HTTP. Nonostante
+ciò la maggior parte delle implementazioni calcola la ETag di una risorsa come
+funzione hash (resistente alle collisioni in modo da ridurre quasi a zero le
+probabilità di risorse diverse con stesso ETag) del contenuto della risorsa.
+
+Quando è in uso ETag, il server risponde alle richieste includendo un header di
+risposta `ETag`:
+
+``` http
+ETag: "636efd9378ab49c"
+```
+
+Il client, alla ricezione della risposta, mette la risorsa richiesta in cache
+insieme al suo ETag. Quando, in seguito, il client effettuerà richieste dello
+stesso tipo allo stesso URL, aggiungerà l'header di richiesta `If-None-Match` il
+cui valore sarà la ETag che ha memorizzato associata a quell'URL.
+
+``` http
+If-None-Match: "636efd9378ab49c"
+```
+
+A questo punto il server verificherà se il valore dell'header di richiesta
+`If-None-Match` corrisponde alla ETag *corrente* della risorsa richiesta: in
+caso affermativo, invierà una risposta 304 Not Modified al client, che possiede
+già la risorsa in cache. Altrimenti il server risponderà alla richiesta in modo
+convenzionale.
+
+
+## Conclusione
+
+HTTP è un protocollo complesso e costituito da molte parti.
+
+Molte componenti di HTTP non sono state trattate (basti pensare
+all'autenticazione tramite HTTP) in modo da mantenere la trattazione sintetica e
+concentrata principalmente su richieste (e metodi di richiesta) e risposte (e
+status codes di risposta).
+
 
 ## Appendice su Rack [appendice-rack]
 
@@ -907,14 +989,17 @@ server principale sotto determinate condizioni.
 
 
 
-[rfc-http-1.0]: http://www.isi.edu/in-notes/rfc1945.txt
+[rfc-http-1.0]: http://tools.ietf.org/html/rfc1945
 [rfc-http-1.1]: http://www.ietf.org/rfc/rfc2616.txt
 [rfc-http-1.1-2014]: http://tools.ietf.org/html/rfc7231
 [rfc-http-headers]: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
 [rfc-patch-method]: http://tools.ietf.org/html/rfc5789
 [rfc-htcpcp]: http://tools.ietf.org/html/rfc2324
 [rfc-deprecating-x-prefix]: http://tools.ietf.org/html/rfc6648
-[iana-headers]: http://www.iana.org/assignments/message-headers/message-headers.xml
+[rfc-http-caching]: http://tools.ietf.org/html/rfc7234
+[rfc-etag]: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.19
+[rfc-7231-vs-rfc-2616]: http://tools.ietf.org/html/rfc7231#page-91
+[iana-headers]: http://www.iana.org/assignments/message-headers/message-headers.xhtml
 [wget]: https://www.gnu.org/software/wget/
 [curl]: http://curl.haxx.se/
 [httpie]: https://github.com/jakubroztocil/httpie
@@ -932,6 +1017,7 @@ server principale sotto determinate condizioni.
 [twitter-api]: https://dev.twitter.com/
 [twitter-api-error-codes]: https://dev.twitter.com/docs/error-codes-responses
 [programmers-stackexchange]: http://programmers.stackexchange.com/
+[rfc-2616-is-dead]: https://www.mnot.net/blog/2014/06/07/rfc2616_is_dead
 [rack-env-specification]: http://rubydoc.info/github/rack/rack/master/file/SPEC
 [x-headers-deprecated]: http://en.wikipedia.org/wiki/List_of_HTTP_header_fields
 [stackoverflow-custom-codes]: http://stackoverflow.com/questions/7996569/can-we-create-custom-http-status-codes
